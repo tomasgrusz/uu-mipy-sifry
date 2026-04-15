@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uu-mipy-sifry"
+version = "0.1.0"
+description = "Utilities for experimenting with a monoalphabetic substitution cipher over A-Z plus underscore."
+authors = [{name = "Tomas Grusz"}]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy==2.4.4",
+    "pandas==3.0.2",
+    "python-dateutil==2.9.0.post0",
+    "six==1.17.0",
+]
+
+[tool.setuptools]
+py-modules = [
+    "bigram_generator",
+    "constants",
+    "decrypt",
+    "encrypt",
+    "keygen",
+]
