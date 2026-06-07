@@ -1,3 +1,8 @@
+"""Batch-decrypts all ciphertext files in ./test/ciphertext/ via Metropolis-Hastings.
+
+Expects filenames matching text_N_sample_M_ciphertext.txt; writes
+corresponding plaintext and recovered key to ./test/plaintext/ and ./test/keys/.
+"""
 
 import pandas as pd
 from decrypt import decrypt
@@ -5,7 +10,6 @@ import metropolis
 import os
 import re
 
-# Define the input directory and the regex pattern to match the filenames
 input_dir = "./test/ciphertext"
 pattern = re.compile(r"^(text_\d+_sample_\d+)_ciphertext\.txt$")
 

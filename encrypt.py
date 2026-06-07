@@ -1,7 +1,10 @@
 from constants import ALPHABET
 
-def encrypt(text, key):
-    # Substitute each supported character using the provided permutation key.
+def encrypt(text: str, key: str) -> str:
+    """Apply a monoalphabetic substitution: ALPHABET[i] -> key[i].
+
+    Characters outside ALPHABET pass through unchanged.
+    """
     encrypted_text = ''
     for char in text:
         upper_char = char.upper()

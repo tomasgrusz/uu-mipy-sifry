@@ -1,7 +1,10 @@
 from constants import ALPHABET
 
-def decrypt(text, key):
-    # Reverse the substitution by locating each ciphertext symbol in the key.
+def decrypt(text: str, key: str) -> str:
+    """Reverse a monoalphabetic substitution: key[i] -> ALPHABET[i].
+
+    Characters outside the key pass through unchanged.
+    """
     decrypted_text = ''
     for char in text:
         upper_char = char.upper()

@@ -1,9 +1,14 @@
+"""Builds bigram frequency matrices from Czech training text (Krakatit).
+
+Outputs absolute counts and relative probabilities as CSV.
+Unseen bigrams get Laplace-smoothed to 1 so log-scoring never hits -inf.
+"""
+
 import numpy as np
 import pandas as pd
 import re
 from collections import defaultdict
 
-# Build bigram frequency tables from the training text.
 with open('./data/krakatit.txt', 'r', encoding='utf-8') as file:
     text = file.read().replace(' ', '_').upper()
 
