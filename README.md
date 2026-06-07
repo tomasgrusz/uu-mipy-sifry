@@ -1,13 +1,18 @@
 # uu-mipy-sifry
 
-Utilities for experimenting with a monoalphabetic substitution cipher over the alphabet `A-Z` plus `_` (underscore as a word separator).
+Utilities for experimenting with a monoalphabetic substitution cipher over the
+alphabet `A-Z` plus `_`, where `_` represents a word separator.
+
+The project includes basic encryption/decryption helpers, generation of a
+bigram language model from Czech text, and stochastic key search using the
+Metropolis-Hastings algorithm.
 
 ## Requirements
 
-- Python 3.13 (project currently uses `.venv` with Python 3.13.2)
+- Python `>=3.13` according to `pyproject.toml`
 - Dependencies listed in `requirements.txt`
 
-Install dependencies:
+Install dependencies in a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -15,60 +20,124 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## File Documentation
+## Quick Usage
 
-### Python files
+Regenerate bigram matrices from `data/krakatit.txt`:
+
+```bash
+python bigram_generator.py
+```
+
+The script overwrites:
+
+- `data/bigram-absolute.csv`
+- `data/bigram-relative.csv`
+
+Batch-decrypt the prepared ciphertext samples:
+
+```bash
+python ciphertext-decryption.py
+```
+
+The script scans `test/ciphertext/*_ciphertext.txt`, uses
+`data/bigram-relative.csv` as the reference model, and writes results to:
+
+- `test/plaintext/*_plaintext.txt`
+- `test/keys/*_key.txt`
+
+Metropolis-Hastings search is stochastic, so results can differ between runs.
+
+Basic API usage:
+
+```python
+from encrypt import encrypt
+from decrypt import decrypt
+
+key = "DEFGHIJKLMNOPQRSTUVWXYZ_ABC"
+text = "BYL_POZDNI_VECER"
+
+ciphertext = encrypt(text, key)
+plaintext = decrypt(ciphertext, key)
+
+assert plaintext == text
+```
+
+The key must be a permutation of the full alphabet `ABCDEFGHIJKLMNOPQRSTUVWXYZ_`.
+
+## Project Structure
+
+### Python Modules and Scripts
 
 - `constants.py`
-  - Central shared constants used across modules.
+  - Shared constants.
   - `ALPHABET`: `ABCDEFGHIJKLMNOPQRSTUVWXYZ_`
-  - `CZECH_FREQ_ORDER`: letter order heuristic for initial key estimation.
+  - `CZECH_FREQ_ORDER`: Czech character-frequency heuristic for initial key estimation.
 
 - `encrypt.py`
   - `encrypt(text, key)`
-  - Applies monoalphabetic substitution using `key` as a permutation of `ALPHABET`.
-  - Non-alphabet characters are passed through unchanged.
+  - Maps `ALPHABET[i] -> key[i]`.
+  - Converts supported characters to uppercase before processing.
+  - Leaves characters outside `ALPHABET` unchanged.
 
 - `decrypt.py`
   - `decrypt(text, key)`
-  - Reverses the substitution done by `encrypt` by locating symbols in `key`.
+  - Inverse operation to `encrypt`: maps `key[i] -> ALPHABET[i]`.
+  - Leaves characters outside the key unchanged.
 
 - `keygen.py`
   - `get_frequency_order(text)`
-    - Counts symbol frequencies and returns symbols in descending frequency order.
+    - Counts characters from `ALPHABET` and returns them in descending frequency order.
   - `generate_initial_key(ciphertext)`
-    - Creates a frequency-based initial substitution key using `CZECH_FREQ_ORDER`.
+    - Builds an initial substitution-key estimate from ciphertext frequencies and `CZECH_FREQ_ORDER`.
+    - Fills characters absent from the ciphertext so the result is a complete alphabet permutation.
 
 - `bigram_generator.py`
-  - Reads `data/krakatit.txt`, normalizes text to uppercase and `_`, filters unsupported characters.
-  - Builds a bigram count matrix with Laplace smoothing (`+1` in each cell).
-  - Outputs absolute and relative bigram matrices into CSV files.
+  - Reads `data/krakatit.txt`.
+  - Normalizes text to uppercase, replaces spaces with `_`, and filters characters outside `A-Z_`.
+  - Builds an absolute bigram matrix.
+  - Replaces zero cells with `1` so log scoring does not hit `log(0)`.
+  - Saves absolute and relative bigram matrices into `data/`.
 
-- `metropolis-hastings.py`
+- `metropolis.py`
   - `bigram_score(text, bigram_matrix, alphabet=ALPHABET)`
     - Scores text by summing log probabilities of adjacent bigrams.
   - `random_key()`
-    - Generates a random substitution key.
+    - Generates a random alphabet permutation.
   - `swap_two_chars(s)`
-    - Produces a neighboring key proposal by swapping two characters.
-  - `metropolis_hastings(ciphertext, reference_matrix, iterations=10000, initial_key=None)`
-    - Runs stochastic search over keys to maximize bigram score.
+    - Creates a neighboring candidate key by swapping two characters.
+  - `metropolis_hastings(ciphertext, reference_matrix, iterations=20000, initial_key=None)`
+    - Searches for a key that maximizes the bigram score of decrypted text.
     - Returns `(best_key, score_history)`.
+    - The current implementation always starts from `generate_initial_key(ciphertext)`.
 
-### Relevant non-Python files
+- `ciphertext-decryption.py`
+  - Decrypts all prepared ciphertext samples in `test/ciphertext/`.
+  - Expects filenames in the form `text_N_sample_M_ciphertext.txt`.
+  - Saves the recovered plaintext and key for each file.
 
-- `requirements.txt`
-  - Python package dependencies used by data processing and scoring.
+### Data, Outputs, and Supporting Files
 
 - `data/krakatit.txt`
-  - Training corpus for language bigram statistics.
+  - Czech reference text used to build bigram statistics.
 
 - `data/bigram-absolute.csv`
-  - Generated absolute bigram counts.
+  - Absolute bigram counts generated by `bigram_generator.py`.
 
 - `data/bigram-relative.csv`
-  - Generated relative bigram probabilities used for scoring.
+  - Relative bigram probabilities used for scoring.
 
-- `test/`
-  - Reference plaintext/key files and many prepared ciphertext samples.
-  - Useful for manual evaluation of encryption/decryption and key search quality.
+- `test/ciphertext/`
+  - Prepared ciphertext samples of different lengths.
+
+- `test/plaintext/`
+  - Outputs from batch decryption.
+
+- `test/keys/`
+  - Recovered keys for the prepared samples.
+
+- `cipher.ipynb`
+  - Application notebook demonstrating the full pipeline: bigram matrix,
+    encryption, single-sample cracking, and batch result analysis.
+
+- `zadani.pdf`
+  - Original project assignment.
