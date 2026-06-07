@@ -21,8 +21,8 @@ for i in range(len(text) - 1):
     if first_char in char_to_index and second_char in char_to_index:
         abs_matrix[char_to_index[first_char], char_to_index[second_char]] += 1
 
-# Add Laplace smoothing so every cell has a nonzero probability.
-abs_matrix += 1
+# Add smoothing only to unseen bigrams so every cell has a nonzero probability.
+abs_matrix[abs_matrix == 0] = 1
 total_bigrams = abs_matrix.sum()
 rel_matrix = abs_matrix / total_bigrams
 
